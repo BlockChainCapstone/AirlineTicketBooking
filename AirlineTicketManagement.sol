@@ -84,15 +84,13 @@ contract AirlineTicketManagement {
     Flight []       public flights;
 
     FlightStatus    flightStatus;
-    SeatStatus      seatStatus;
-    FlightEvents    flightEvent;
 
 
     constructor() {
 
         // airline users
-        airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser1', 'AU01');
-        airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser2', 'AU02');
+        airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser1');
+        airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser2');
 
         //traveller users
         travellerUsers[msg.sender] = Traveller(msg.sender, 'Bharat');
