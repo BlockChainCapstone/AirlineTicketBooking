@@ -63,8 +63,8 @@ contract AirlineTicketManagement {
       uint256       availableSeats; 
       string        src;
       string        dest;
-      uint256       departureTime;
-      uint256       reachingTime;
+      string        departureDate;
+      string        reachingDate;
       FlightStatus  status;
     }
 
@@ -87,7 +87,6 @@ contract AirlineTicketManagement {
 
 
     constructor() {
-
         // airline users
         airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser1');
         airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser2');
@@ -110,5 +109,17 @@ contract AirlineTicketManagement {
     modifier isTravellerUser() {
         require(msg.sender == travellerUsers[msg.sender].traveller, "Caller is not traveller");
         _;
+    }
+
+    //method to add flight
+    function addFlight(string memory departureDate, string memory landingDate) public isAirlineUser {
+
+        Flight memory flight1 = Flight("E101", "Eagle Airline", 20, "Delhi", "Bangalore", departureDate, landingDate, FlightStatus.Scheduled);
+        flights.push(flight1);
+        Flight memory flight2 = Flight("E102", "Eagle Airline", 20, "Bangalore", "Mumbai", departureDate, landingDate, FlightStatus.Scheduled);
+        flights.push(flight2);
+
+        Flight memory flight3 = Flight("D103", "Dream Airline", 20, "Mumbai", "Delhi", departureDate, landingDate, FlightStatus.Scheduled);
+        flights.push(flight3);
     }
 }
