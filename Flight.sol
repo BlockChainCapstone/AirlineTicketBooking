@@ -1,11 +1,7 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-
-conract Flight {
-
-  string[4] statusMap = ['BookingOpen', 'BookingClosed', 'Delayed', 'Departed','Landed','Cancelled'];
-
-  struct FlightRecord {
+struct FlightRecord {
     string      flightId;
     address     airlineAddress;
     uint8       maxSeats;
@@ -13,7 +9,13 @@ conract Flight {
     string      dest;
     uint256     startTime;
     uint        ticketPrice;
-  }
+}
+
+
+
+contract Flight {
+
+  string[6] statusMap = ['BookingOpen', 'BookingClosed', 'Delayed', 'Departed','Landed','Cancelled'];
 
   uint8       _availableSeats;
   FlightRecord _info;
@@ -29,26 +31,30 @@ conract Flight {
   }
 
 
-  constructor(FlightRecord flightInfo)  {
+  constructor(FlightRecord memory  flightInfo)  {
     _info = flightInfo;
     _availableSeats= flightInfo.maxSeats;
     _status = 0;
+  }
+
+  function getAvailableSeats() public view returns (uint8) {
+    return _availableSeats;
   }
 
   function setStatus(uint8 status) public isAirliner validStatus(status){
     _status = status;
   }
 
-  function getStatus public returns (string){
+  function getStatus() public view returns(string memory){
     return statusMap[_status];
   }
 
-  function block(unint numSeats) public {
+  function blockSeats(uint8 numSeats) public {
     require(_availableSeats >= numSeats, "Not Enough Seats Available");
     _availableSeats = _availableSeats - numSeats;
   }
 
-  function release(unint numSeats) public{
+  function releaseSeats(uint8 numSeats) public{
     require(_availableSeats + numSeats <= _info.maxSeats, "Release more seats than capacity");
     _availableSeats = _availableSeats + numSeats;
   }

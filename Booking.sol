@@ -1,19 +1,22 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
+
+import "./String.sol";
 
 
 contract Booking {
     /**
         Booking status
     */
-    enum BookingStatus {Booked, RefundRequest, Refunded, CancelRequest, Cancelled};
+    enum BookingStatus {Booked, RefundRequest, Refunded, CancelRequest, Cancelled}
 
-    /**
-    enum CancelOption {Before2Hours, Between2And24, Between24And96, Above96};
 
-    string          _flightId;
+    enum CancelOption {Before2Hours, Between2And24, Between24And96, Above96}
+
+    string           _flightId;
     string          _startDate;
-    address         _userAddress;
-    address         _airlineAddress;
+    address payable  _userAddress;
+    address payable _airlineAddress;
     uint8           _noOfTickets;
     uint256         _totalPrice;
     uint256         _refundAmount = 0 ;
@@ -40,20 +43,36 @@ contract Booking {
         _;
     }
 
-    constructor(string flightId, string startDate, address userAddress, address airlineAddress, uint8 noOfTickets, uint256 ticketPrice) payable {
+    constructor(string  memory flightId, string  memory startDate, address  userAddress, address payable  airlineAddress, uint8  noOfTickets, uint256   ticketPrice) payable {
       _flightId = flightId;
       _startDate = startDate;
-      _userAddress = userAddress
+      _userAddress =  payable(userAddress);
       _airlineAddress = airlineAddress;
       _noOfTickets=noOfTickets;
       _totalPrice=ticketPrice * noOfTickets;
-      _airlineAddress.transfer(totalPrice);
+      _airlineAddress.transfer(_totalPrice);
       _bookingStatus = BookingStatus.Booked;
     }
 
-    function requestRefund(string flightState) public isTraveller {
+    function getFlightId() public view returns (string memory) {
+        return _flightId;
+    }
+
+    function getStartDate() public view returns (string memory) {
+        return _startDate;
+    }
+
+    function getTicketCount() public view returns (uint8){
+        return _noOfTickets;
+    }
+
+    function getBookingStatus() public view returns (BookingStatus){
+        return _bookingStatus;
+    }
+
+    function requestRefund(string memory flightState) public isTraveller {
       // 50% as refund amount
-      if (flightState=="Delayed"){
+      if (String.compare(flightState, "Delayed")){
         _refundAmount = _totalPrice / 2;
       } else{
         _refundAmount = _totalPrice;
@@ -62,7 +81,7 @@ contract Booking {
       _bookingStatus=BookingStatus.RefundRequest;
     }
 
-    function requestCancel(uint cancelOption) public isTraveller validCancelOption(cancelOption){
+    function requestCancel(uint8 cancelOption) public isTraveller validCancelOption(cancelOption){
       if ( cancelOption == 1 ){
         //20% as refund Amount
         _refundAmount = _totalPrice / 5;
@@ -76,7 +95,7 @@ contract Booking {
       _bookingStatus=BookingStatus.CancelRequest;
     }
 
-    function refund() payable pulblic isAirliner isRefundable {
+    function refund() payable public isAirliner isRefundable {
       _userAddress.transfer(_refundAmount);
       if (_bookingStatus == BookingStatus.RefundRequest ){
         _bookingStatus=BookingStatus.Refunded;
