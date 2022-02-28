@@ -9,8 +9,8 @@ import "./String.sol";
 contract AirlineTicketManagement {
 
 
-  address airline1;
-  address airline2;
+  address airline1 = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+  address airline2 = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
 
   mapping (address => mapping(string => mapping(string => Booking))) bookings;
   mapping (string => mapping(string => Flight )) flights;
@@ -18,6 +18,13 @@ contract AirlineTicketManagement {
   mapping (address => Booking[] ) dues;
 
 
+  function getFlightRecords(string memory flightId) public view returns(FlightRecord memory){
+    return flightRecords[flightId];
+  }
+
+  function getFlightStatus(string memory flightId, string memory startDate) public view returns(string memory){
+    return flights[flightId][startDate].getStatus();
+  }
 
   modifier isAirliner() {
       require(airline1 == msg.sender || airline2 == msg.sender, "Only Aireliner is allowed to perform function");
@@ -57,9 +64,9 @@ contract AirlineTicketManagement {
     flightRecords["A2-P002"] = FlightRecord("A2-P002",airline2,40,"Kolkatta","Jaipur",180,10);
   }
 
-  function updateFlightStatus(string memory flightId, string memory startDate, uint8 status) public validFlight(flightId) isAirliner {
-    if ( ! flights[flightId][startDate].isValid() ){
-      flights[flightId][startDate]= new Flight(flightRecords[flightId]);
+  function updateFlightStatus(string memory flightId, string memory startDate, uint8 status) public /*validFlight(flightId) isAirliner*/ {
+    if ( flights[flightId] == 0 || !flights[flightId][startDate].isValid() ){ //27 ,28
+        flights[flightId][startDate] = new Flight(flightRecords[flightId]);
     }
     flights[flightId][startDate].setStatus(status);
   }
@@ -75,11 +82,11 @@ contract AirlineTicketManagement {
     }
   }
 
-  function checkAvailability(string memory flightId, string memory startDate) public validFlight(flightId) isBookingOpen(flightId,startDate) returns (uint)  {
+  function checkAvailability(string memory flightId, string memory startDate) public view validFlight(flightId) isBookingOpen(flightId,startDate) returns (uint)  {
     return flights[flightId][startDate].getAvailableSeats();
   }
 
-  function checkBookingStatus(string memory flightId, string memory startDate) public isTraveller hasBookings(flightId, startDate){
+  function checkBookingStatus(string memory flightId, string memory startDate) public view isTraveller hasBookings(flightId, startDate){
     bookings[msg.sender][flightId][startDate].getBookingStatus();
   }
 

@@ -31,7 +31,7 @@ contract Flight {
   }
 
 
-  constructor(FlightRecord memory  flightInfo)  {
+  constructor(FlightRecord memory flightInfo)  {
     _info = flightInfo;
     _availableSeats= flightInfo.maxSeats;
     _status = 0;
@@ -46,7 +46,7 @@ contract Flight {
     return _availableSeats;
   }
 
-  function setStatus(uint8 status) public isAirliner validStatus(status){
+  function setStatus(uint8 status) public payable isAirliner validStatus(status){
     _status = status;
   }
 
