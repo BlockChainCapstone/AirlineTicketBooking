@@ -46,14 +46,7 @@ contract Flight {
     return _availableSeats;
   }
 
-  function getAirlineAddress() public view returns (address[2] memory) {
-    address[2] memory addresses;
-    addresses[0]=_info.airlineAddress;
-    addresses[1]=msg.sender;
-    return addresses;
-  }
-
-  function setStatus(address invokerAddress, uint8 status) public payable isAirliner(invokerAddress) validStatus(status){
+  function setStatus(address invokerAddress, uint8 status) public isAirliner(invokerAddress) validStatus(status){
     _status = status;
   }
 

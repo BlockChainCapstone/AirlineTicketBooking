@@ -16,6 +16,7 @@ contract AirlineTicketManagement {
   mapping (string => mapping(string => Flight )) flights;
   mapping (string => FlightRecord ) flightRecords;
   mapping (address => Booking[] ) dues;
+  mapping (address => uint256  ) wallet;
 
 
 
@@ -49,6 +50,7 @@ contract AirlineTicketManagement {
     _;
   }
 
+
   constructor() {
     flightRecords["A11"] = FlightRecord("A11",airline1,20,"Bengaluru","Pune",180,20);
     flightRecords["A12"] = FlightRecord("A12",airline1,25,"Mumbai","Bengaluru",240,10);
@@ -56,6 +58,16 @@ contract AirlineTicketManagement {
     flightRecords["A21"] = FlightRecord("A21",airline2,40,"Bengaluru","Pune",300,20);
     flightRecords["A22"] = FlightRecord("A22",airline2,40,"Kolkatta","Jaipur",180,10);
   }
+
+  function loadToWallet() payable external {
+     wallet[msg.sender] += msg.value;
+  }
+
+  function withdrawFromWallet() public {
+    payable(msg.sender).transfer(wallet[msg.sender]);
+    wallet[msg.sender]=0;
+  }
+
 
   function updateFlightStatus(string memory flightId, string memory startDate, uint8 status) public validFlight(flightId) isAirliner {
     if ( status == 0 ){
@@ -68,6 +80,11 @@ contract AirlineTicketManagement {
     }
   }
 
+  function getWalletBalance() public view returns (uint256){
+    return wallet[msg.sender];
+  }
+
+
   function getFlightRecords(string memory flightId) public view returns(FlightRecord memory){
     return flightRecords[flightId];
   }
@@ -76,16 +93,12 @@ contract AirlineTicketManagement {
     return flights[flightId][startDate].getStatus();
   }
 
-  function getFlightAirline(string memory flightId, string memory startDate) public view returns(address[2] memory){
-    return flights[flightId][startDate].getAirlineAddress();
-  }
-
-
   function clearDues() public isAirliner {
     Booking [] storage dueBookings = dues[msg.sender];
-
     for (uint i = 0; i < dueBookings.length; i++) {
         Booking booking = dueBookings[i];
+        wallet[booking._userAddress()] += booking._refundAmount();
+        wallet[msg.sender] -= booking._refundAmount();
         booking.refund();
         flights[booking.getFlightId()][booking.getStartDate()].releaseSeats(booking.getTicketCount());
 
@@ -110,15 +123,14 @@ contract AirlineTicketManagement {
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 
-  function book(string memory flightId, string memory startDate, uint8 numOfTickets) payable public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate) returns (address){
-    address payable airlineAddress = payable(flightRecords[flightId].airlineAddress);
+  function book(string memory flightId, string memory startDate, uint8 numOfTickets)  public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate){
+    address airlineAddress = flightRecords[flightId].airlineAddress;
     Booking booking = new Booking(flightId,startDate,msg.sender,airlineAddress,numOfTickets,flightRecords[flightId].ticketPrice);
-    airlineAddress.transfer(booking.getTicketPrice());
+    wallet[airlineAddress] += booking.getTicketPrice();
+    wallet[msg.sender] -= booking.getTicketPrice();
     bookings[msg.sender][flightId][startDate] = booking;
     flights[flightId][startDate].blockSeats(numOfTickets);
-    return msg.sender;
-    //booking.setStaus(BookingStatus.Booked);
-
+    booking.setStatus(BookingStatus.Booked);
   }
 
 }

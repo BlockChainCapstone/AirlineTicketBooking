@@ -3,7 +3,7 @@ pragma solidity 0.8.6;
 
 import "./String.sol";
 
-enum BookingStatus {Booked, RefundRequest, Refunded, CancelRequest, Cancelled}
+enum  BookingStatus {Booked, RefundRequest, Refunded, CancelRequest, Cancelled}
 
 contract Booking {
 
@@ -12,12 +12,12 @@ contract Booking {
 
     string           _flightId;
     string          _startDate;
-    address       _userAddress;
+    address public      _userAddress;
     address     _airlineAddress;
     uint8           _noOfTickets;
     uint256         _totalPrice;
-    uint256         _refundAmount = 0 ;
-    BookingStatus   _bookingStatus;
+    uint256 public        _refundAmount = 0 ;
+    BookingStatus public  _bookingStatus;
 
 
     modifier isAirliner() {
@@ -40,7 +40,7 @@ contract Booking {
         _;
     }
 
-    constructor(string  memory flightId, string  memory startDate, address  userAddress, address  airlineAddress, uint8  noOfTickets, uint256   ticketPrice) payable {
+    constructor(string  memory flightId, string  memory startDate, address  userAddress, address  airlineAddress, uint8  noOfTickets, uint256   ticketPrice) {
       _flightId = flightId;
       _startDate = startDate;
       _userAddress =  userAddress;
@@ -50,7 +50,7 @@ contract Booking {
 
     }
 
-    function  setStatus(BookingStatus bookingStatus) public {
+    function setStatus(BookingStatus bookingStatus) external {
       _bookingStatus = bookingStatus;
     }
 
