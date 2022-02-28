@@ -45,6 +45,11 @@ contract AirlineTicketManagement {
     _;
   }
 
+  modifier checkBalance(uint8 numberOfTickets, string memory flightId){
+    require(wallet[msg.sender] > numberOfTickets * flightRecords[flightId].ticketPrice, "Traveller is not having enough balance");
+    _;
+  }
+
   modifier refundable(string memory flightId,string memory startDate){
     require(String.compare(flights[flightId][startDate].getStatus(), "Cancelled") || String.compare(flights[flightId][startDate].getStatus(), "Delayed"), "Flight is not in Cancelled or Delayed State");
     _;
@@ -60,11 +65,11 @@ contract AirlineTicketManagement {
   }
 
   function loadToWallet() payable external {
-     wallet[msg.sender] += msg.value;
+     wallet[msg.sender] += msg.value/1000000000000000000;
   }
 
   function withdrawFromWallet() public {
-    payable(msg.sender).transfer(wallet[msg.sender]);
+    payable(msg.sender).transfer(wallet[msg.sender]*1000000000000000000);
     wallet[msg.sender]=0;
   }
 
@@ -101,7 +106,6 @@ contract AirlineTicketManagement {
         wallet[msg.sender] -= booking._refundAmount();
         booking.refund();
         flights[booking.getFlightId()][booking.getStartDate()].releaseSeats(booking.getTicketCount());
-
     }
   }
 
@@ -123,7 +127,7 @@ contract AirlineTicketManagement {
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 
-  function book(string memory flightId, string memory startDate, uint8 numOfTickets)  public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate){
+  function book(string memory flightId, string memory startDate, uint8 numOfTickets)  public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate) checkBalance(numOfTickets, flightId){
     address airlineAddress = flightRecords[flightId].airlineAddress;
     Booking booking = new Booking(flightId,startDate,msg.sender,airlineAddress,numOfTickets,flightRecords[flightId].ticketPrice);
     wallet[airlineAddress] += booking.getTicketPrice();
@@ -132,5 +136,4 @@ contract AirlineTicketManagement {
     flights[flightId][startDate].blockSeats(numOfTickets);
     booking.setStatus(BookingStatus.Booked);
   }
-
 }
