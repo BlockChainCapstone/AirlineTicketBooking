@@ -1,125 +1,96 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.6;
 
-//import "AirlineBaseData.sol";
+import "./Booking.sol";
+import "./Flight.sol";
+
 
 contract AirlineTicketManagement {
-    
-    // temp added here 
 
-       /**
-    number of seats in flight
-    */
-    uint256 numberOfSeats = 20;
+  addres airline1;
+  addres airline2;
 
-    uint256 numberOfFlights = 2;
-    
-    /**
-        1. Flight is scheduled from src to destination - Scheduled
-        2. Scheduled Flight is open for ticket booking - BookingOpen
-        3. Booking are completed or booking is closed by airline - BookingClosed
-        4. Flight can’t not be completed due to any reason hence cancelled by airline - Cancelled
-        5. Flight is not on time - Delayed 
-        6. Flight has taken off and in air - Flying
-    */
-    enum FlightStatus {Scheduled, BookingOpen, BookingClosed, Delayed, Departed, Landed, Cancelled}
+  mapping (address => mapping(string => mapping(string => Booking))) bookings;
+  mapping (string => mapping(string => Flight )) flights;
+  mapping (string => FlightRecord ) flightRecords;
+  mapping (address => Booking[] ) dues;
 
 
-    /**
-    Airline user details in struct
-    */
-    struct AirlineUser {
-      address       user;
-      string        userName;
+  modifier isAirliner() {
+      require(airline1 == msg.sender || aireline2 == msg.sender, "Only Aireline is allowed to refund");
+      _;
+  }
+
+  modifier isTraveller() {
+      require(airline1 != msg.sender && aireline2 != msg.sender, "Only Aireline is allowed to refund");
+      _;
+  }
+
+  modifier validFlight(string flightId){
+    require(flightRecords[flightId] != address(0x0),"Not a valid Flight Id");
+    _;
+  }
+
+  modifier hasBookings(string flightId,string startDate){
+    require(bookings[msg.sender][flightId][startDate] != address(0x0),"No bookings for the flight and date");
+    _;
+  }
+
+  modifier isBookingOpen(string flightId,string startDate){
+    require(flights[flightId][startDate].getStatus() == "BookingOpen", "Flight is not in BookingOpen State");
+    _;
+  }
+
+  modifier refundable(string flightId,string startDate){
+    require(flights[flightId][startDate].getStatus() == "Cancelled" || flights[flightId][startDate].getStatus() == "Delayed", "Flight is not in Cancelled or Delayed State");
+    _;
+  }
+
+  constructor() {
+    flightRecords["A1-P001"]=FlightRecord("A1-P001",airline1,20,"Bengaluru","Pune",180,20);
+    flightRecords["A1-P002"]=FlightRecord("A1-P002",airline1,25,"Mumbai","Bengaluru",240,10);
+    flightRecords["A1-P003"]=FlightRecord("A1-P003",airline1,20,"Bengaluru","Bhopal",720,30);
+    flightRecords["A2-P001"]=FlightRecord("A2-P001",airline2,40,"Bengaluru","Pune",300,20);
+    flightRecords["A2-P002"]=FlightRecord("A2-P002",airline2,40,"Kolkatta","Jaipur",180,10);
+  }
+
+  function updateFlightStatus(string flightId, string startDate, uint status) public validFlight(flightId) isAirliner {
+    if (flights[flightId][startDate] == address(0x0)){
+      flights[flightId][startDate]= Flight(flightRecords[flightId]);
     }
+    flights[flightId][startDate].setStatus(status);
+  }
 
-
-    /**
-        booking status
-    */
-    enum BookingStatus {Refunded, Booked, Cancelled}
-    /**
-        booking details
-    */
-    struct BookingDetails{
-        address         userAddress;
-        address         airlineAddress;
-        uint8           noOfTickets;
-        uint256         totalPerTicket;
-        BookingStatus   bookingStatus;
+  function clearDues() isAirliner {
+    Booking [] dueBookings = dues[msg.sender];
+    while(dueBookings.length>0)
+      Booking booking = dueBookings.pop()
+      booking.refund()
+      flights[booking._flightId][booking._startDate].release(booking._noOfTickets)
     }
+  }
 
-    //key for bookingMap will be userAddess + flightId + StartDate
-    mapping(string => BookingDetails) bookingMap;
-    //Key -> flightId
-    mapping(string => Flight) flightStatusMap;
+  function checkAvailability(string flightId, string startDate) public validFlight(flightId) isBookingOpen(flightId,startDate) return (uint)  {
+    return flights[flightId][startDate]._availableSeats;
+  }
 
-    /**
-        flight details
-    */
-    struct Flight{
-      string        flightId;
-      string        airlineName;
-      uint256       availableSeats; 
-      string        src;
-      string        dest;
-      string        departureDate;
-      string        reachingDate;
-      FlightStatus  status;
-    }
+  function checkBookingStatus(string flightId, string startDate) public isTraveller hasBookings(flightId, startDate){
+    bookings[msg.sender][flightId][startDate]._bookingStatus;
+  }
 
-    /**
-    traveller details 
-    */
-    struct Traveller{
-      address   traveller;
-      string      name;
-    }
+  function claimRefund(string flightId, string startDate) public isTraveller hasBookings(flightId, startDate) refundable(flightId, startDate){
+    bookings[msg.sender][flightId][startDate].requestRefund(flights[flightId][startDate].getStatus());
+    dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate])
+  }
 
-    //temp to remove
+  function cancel(string flightId, string startDate, uint cancelOption) public isTraveller validFlight(flightId)  hasBookings(flightId, startDate){
+    bookings[msg.sender][flightId][startDate].requestCancel(cancelOption);
+    dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate])
+  }
 
-    /*Variables*/
-    mapping (address => AirlineUser) airlineUsers;
-    mapping (address => Traveller) travellerUsers;
-    Flight []       public flights;
+  function book(string flightId, string startDate, uint numOfTickets) public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate){
+    bookings[msg.sender][flightId][startDate] = Booking(flightId,startDate,msg.sender,flightRecords[flightId].airlineAddress,numOfTickets,flightRecords[flightId].ticketPrice);
+    flights[flightId][startDate].block(numOfTickets)
+  }
 
-    FlightStatus    flightStatus;
-
-
-    constructor() {
-        // airline users
-        airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser1');
-        airlineUsers[msg.sender] = AirlineUser(msg.sender, 'AirlineUser2');
-
-        //traveller users
-        travellerUsers[msg.sender] = Traveller(msg.sender, 'Bharat');
-        travellerUsers[msg.sender] = Traveller(msg.sender, 'Shyam');
-        travellerUsers[msg.sender] = Traveller(msg.sender, 'Mohan');
-        travellerUsers[msg.sender] = Traveller(msg.sender, 'Abhi');
-        travellerUsers[msg.sender] = Traveller(msg.sender, 'Akash');
-    }
-
-    //only airline users will be allowed
-    modifier isAirlineUser() {
-        require(msg.sender == airlineUsers[msg.sender].user, "Caller is not airline user");
-        _;
-    }
-
-    //only traveller users will be allower
-    modifier isTravellerUser() {
-        require(msg.sender == travellerUsers[msg.sender].traveller, "Caller is not traveller");
-        _;
-    }
-
-    //method to add flight
-    function addFlight(string memory departureDate, string memory landingDate) public isAirlineUser {
-
-        Flight memory flight1 = Flight("E101", "Eagle Airline", 20, "Delhi", "Bangalore", departureDate, landingDate, FlightStatus.Scheduled);
-        flights.push(flight1);
-        Flight memory flight2 = Flight("E102", "Eagle Airline", 20, "Bangalore", "Mumbai", departureDate, landingDate, FlightStatus.Scheduled);
-        flights.push(flight2);
-
-        Flight memory flight3 = Flight("D103", "Dream Airline", 20, "Mumbai", "Delhi", departureDate, landingDate, FlightStatus.Scheduled);
-        flights.push(flight3);
-    }
 }
