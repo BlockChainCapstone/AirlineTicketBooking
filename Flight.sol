@@ -12,7 +12,6 @@ struct FlightRecord {
 }
 
 
-
 contract Flight {
 
   string[6] statusMap = ['BookingOpen', 'BookingClosed', 'Delayed', 'Departed','Landed','Cancelled'];
@@ -20,6 +19,7 @@ contract Flight {
   uint8       _availableSeats;
   FlightRecord _info;
   uint8  _status;
+  bool   _exists;
 
   modifier isAirliner() {
       require(_info.airlineAddress == msg.sender, "Only  Airline is allowed to mdify");
@@ -35,6 +35,11 @@ contract Flight {
     _info = flightInfo;
     _availableSeats= flightInfo.maxSeats;
     _status = 0;
+    _exists = true;
+  }
+
+  function isValid() public view returns (bool) {
+    return _exists;
   }
 
   function getAvailableSeats() public view returns (uint8) {

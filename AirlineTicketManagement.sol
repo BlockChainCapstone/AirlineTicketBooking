@@ -30,12 +30,12 @@ contract AirlineTicketManagement {
   }
 
   modifier validFlight(string memory flightId){
-    require(flightRecords[flightId] != address(0x0),"Not a valid Flight Id");
+    require(flightRecords[flightId].airlineAddress != address(0x0),"Not a valid Flight Id");
     _;
   }
 
   modifier hasBookings(string memory flightId,string memory startDate){
-    require(bookings[msg.sender][flightId][startDate] != address(0),"No bookings for the flight and date");
+    require(bookings[msg.sender][flightId][startDate].isValid(),"No bookings for the flight and date");
     _;
   }
 
@@ -58,7 +58,7 @@ contract AirlineTicketManagement {
   }
 
   function updateFlightStatus(string memory flightId, string memory startDate, uint8 status) public validFlight(flightId) isAirliner {
-    if (flights[flightId][startDate] == address(0x0)){
+    if ( ! flights[flightId][startDate].isValid() ){
       flights[flightId][startDate]= new Flight(flightRecords[flightId]);
     }
     flights[flightId][startDate].setStatus(status);

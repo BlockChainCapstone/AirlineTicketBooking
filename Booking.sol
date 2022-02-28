@@ -54,6 +54,10 @@ contract Booking {
       _bookingStatus = BookingStatus.Booked;
     }
 
+    function isValid() public view returns (bool) {
+        return _userAddress!=address(0x0);
+    }
+
     function getFlightId() public view returns (string memory) {
         return _flightId;
     }
