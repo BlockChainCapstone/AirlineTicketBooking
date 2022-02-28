@@ -3,20 +3,17 @@ pragma solidity 0.8.6;
 
 import "./String.sol";
 
+enum BookingStatus {Booked, RefundRequest, Refunded, CancelRequest, Cancelled}
 
 contract Booking {
-    /**
-        Booking status
-    */
-    enum BookingStatus {Booked, RefundRequest, Refunded, CancelRequest, Cancelled}
 
 
     enum CancelOption {Before2Hours, Between2And24, Between24And96, Above96}
 
     string           _flightId;
     string          _startDate;
-    address payable  _userAddress;
-    address payable _airlineAddress;
+    address       _userAddress;
+    address     _airlineAddress;
     uint8           _noOfTickets;
     uint256         _totalPrice;
     uint256         _refundAmount = 0 ;
@@ -43,15 +40,18 @@ contract Booking {
         _;
     }
 
-    constructor(string  memory flightId, string  memory startDate, address  userAddress, address payable  airlineAddress, uint8  noOfTickets, uint256   ticketPrice) payable {
+    constructor(string  memory flightId, string  memory startDate, address  userAddress, address  airlineAddress, uint8  noOfTickets, uint256   ticketPrice) payable {
       _flightId = flightId;
       _startDate = startDate;
-      _userAddress =  payable(userAddress);
+      _userAddress =  userAddress;
       _airlineAddress = airlineAddress;
-      _noOfTickets=noOfTickets;
-      _totalPrice=ticketPrice * noOfTickets;
-      _airlineAddress.transfer(_totalPrice);
-      _bookingStatus = BookingStatus.Booked;
+      _noOfTickets = noOfTickets;
+      _totalPrice = ticketPrice * noOfTickets;
+
+    }
+
+    function  setStatus(BookingStatus bookingStatus) public {
+      _bookingStatus = bookingStatus;
     }
 
     function isValid() public view returns (bool) {
@@ -64,6 +64,10 @@ contract Booking {
 
     function getStartDate() public view returns (string memory) {
         return _startDate;
+    }
+
+    function getTicketPrice() public view returns (uint256){
+        return _totalPrice;
     }
 
     function getTicketCount() public view returns (uint8){
@@ -81,7 +85,6 @@ contract Booking {
       } else{
         _refundAmount = _totalPrice;
       }
-
       _bookingStatus=BookingStatus.RefundRequest;
     }
 
@@ -100,7 +103,7 @@ contract Booking {
     }
 
     function refund() payable public isAirliner isRefundable {
-      _userAddress.transfer(_refundAmount);
+    //  _userAddress.transfer(_refundAmount);
       if (_bookingStatus == BookingStatus.RefundRequest ){
         _bookingStatus=BookingStatus.Refunded;
       }else {

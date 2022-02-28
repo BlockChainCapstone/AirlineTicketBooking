@@ -110,9 +110,15 @@ contract AirlineTicketManagement {
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 
-  function book(string memory flightId, string memory startDate, uint8 numOfTickets) public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate){
-    bookings[msg.sender][flightId][startDate] = new Booking(flightId,startDate,msg.sender,payable(flightRecords[flightId].airlineAddress),numOfTickets,flightRecords[flightId].ticketPrice);
+  function book(string memory flightId, string memory startDate, uint8 numOfTickets) payable public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate) returns (address){
+    address payable airlineAddress = payable(flightRecords[flightId].airlineAddress);
+    Booking booking = new Booking(flightId,startDate,msg.sender,airlineAddress,numOfTickets,flightRecords[flightId].ticketPrice);
+    airlineAddress.transfer(booking.getTicketPrice());
+    bookings[msg.sender][flightId][startDate] = booking;
     flights[flightId][startDate].blockSeats(numOfTickets);
+    return msg.sender;
+    //booking.setStaus(BookingStatus.Booked);
+
   }
 
 }
