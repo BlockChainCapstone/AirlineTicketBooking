@@ -17,12 +17,12 @@ contract AirlineTicketManagement {
 
 
   modifier isAirliner() {
-      require(airline1 == msg.sender || aireline2 == msg.sender, "Only Aireline is allowed to refund");
+      require(airline1 == msg.sender || aireline2 == msg.sender, "Only Aireliner is allowed to perform function");
       _;
   }
 
   modifier isTraveller() {
-      require(airline1 != msg.sender && aireline2 != msg.sender, "Only Aireline is allowed to refund");
+      require(airline1 != msg.sender && aireline2 != msg.sender, "Only traveller is allowed to perform fucntion");
       _;
   }
 
@@ -47,26 +47,26 @@ contract AirlineTicketManagement {
   }
 
   constructor() {
-    flightRecords["A1-P001"]=FlightRecord("A1-P001",airline1,20,"Bengaluru","Pune",180,20);
-    flightRecords["A1-P002"]=FlightRecord("A1-P002",airline1,25,"Mumbai","Bengaluru",240,10);
-    flightRecords["A1-P003"]=FlightRecord("A1-P003",airline1,20,"Bengaluru","Bhopal",720,30);
-    flightRecords["A2-P001"]=FlightRecord("A2-P001",airline2,40,"Bengaluru","Pune",300,20);
-    flightRecords["A2-P002"]=FlightRecord("A2-P002",airline2,40,"Kolkatta","Jaipur",180,10);
+    flightRecords["A1-P001"]=new FlightRecord("A1-P001",airline1,20,"Bengaluru","Pune",180,20);
+    flightRecords["A1-P002"]=new FlightRecord("A1-P002",airline1,25,"Mumbai","Bengaluru",240,10);
+    flightRecords["A1-P003"]=new FlightRecord("A1-P003",airline1,20,"Bengaluru","Bhopal",720,30);
+    flightRecords["A2-P001"]=new FlightRecord("A2-P001",airline2,40,"Bengaluru","Pune",300,20);
+    flightRecords["A2-P002"]=new FlightRecord("A2-P002",airline2,40,"Kolkatta","Jaipur",180,10);
   }
 
   function updateFlightStatus(string flightId, string startDate, uint status) public validFlight(flightId) isAirliner {
     if (flights[flightId][startDate] == address(0x0)){
-      flights[flightId][startDate]= Flight(flightRecords[flightId]);
+      flights[flightId][startDate]= new Flight(flightRecords[flightId]);
     }
     flights[flightId][startDate].setStatus(status);
   }
 
-  function clearDues() isAirliner {
+  function clearDues() public isAirliner {
     Booking [] dueBookings = dues[msg.sender];
     while(dueBookings.length>0)
-      Booking booking = dueBookings.pop()
-      booking.refund()
-      flights[booking._flightId][booking._startDate].release(booking._noOfTickets)
+      Booking booking = dueBookings.pop();
+      booking.refund();
+      flights[booking._flightId][booking._startDate].release(booking._noOfTickets);
     }
   }
 
@@ -80,7 +80,7 @@ contract AirlineTicketManagement {
 
   function claimRefund(string flightId, string startDate) public isTraveller hasBookings(flightId, startDate) refundable(flightId, startDate){
     bookings[msg.sender][flightId][startDate].requestRefund(flights[flightId][startDate].getStatus());
-    dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate])
+    dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 
   function cancel(string flightId, string startDate, uint cancelOption) public isTraveller validFlight(flightId)  hasBookings(flightId, startDate){
@@ -89,7 +89,7 @@ contract AirlineTicketManagement {
   }
 
   function book(string flightId, string startDate, uint numOfTickets) public isTraveller validFlight(flightId) isBookingOpen(flightId,startDate){
-    bookings[msg.sender][flightId][startDate] = Booking(flightId,startDate,msg.sender,flightRecords[flightId].airlineAddress,numOfTickets,flightRecords[flightId].ticketPrice);
+    bookings[msg.sender][flightId][startDate] = new Booking(flightId,startDate,msg.sender,flightRecords[flightId].airlineAddress,numOfTickets,flightRecords[flightId].ticketPrice);
     flights[flightId][startDate].block(numOfTickets)
   }
 

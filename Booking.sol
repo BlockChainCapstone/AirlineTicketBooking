@@ -19,6 +19,7 @@ contract Booking {
     uint256         _refundAmount = 0 ;
     BookingStatus   _bookingStatus;
 
+
     modifier isAirliner() {
         require(_airlineAddress == msg.sender, "Only Airline is allowed to refund");
         _;
@@ -29,7 +30,7 @@ contract Booking {
         _;
     }
 
-    modifier validCancelOption() {
+    modifier validCancelOption(uint8 cancelOption) {
         require(cancelOption >= 1 && cancelOption <=3, "Not a valid cancel option, only accepted values are 1-3");
         _;
     }
@@ -39,22 +40,22 @@ contract Booking {
         _;
     }
 
-    constructor(string flightId, string startDate, address userAddress, address airlineAddress, uint8 noOfTickets, uint256 ticketPrice) payable  isTraveller {
+    constructor(string flightId, string startDate, address userAddress, address airlineAddress, uint8 noOfTickets, uint256 ticketPrice) payable {
       _flightId = flightId;
       _startDate = startDate;
       _userAddress = userAddress
-      _airlineAddress=airlineAddress;
+      _airlineAddress = airlineAddress;
       _noOfTickets=noOfTickets;
       _totalPrice=ticketPrice * noOfTickets;
       _airlineAddress.transfer(totalPrice);
-      _bookingStatus=BookingStatus.Booked;validCancelOption
+      _bookingStatus = BookingStatus.Booked;
     }
 
     function requestRefund(string flightState) public isTraveller {
       // 50% as refund amount
-      if (flightState="Delayed"){
+      if (flightState=="Delayed"){
         _refundAmount = _totalPrice / 2;
-      }else{
+      } else{
         _refundAmount = _totalPrice;
       }
 
@@ -70,7 +71,7 @@ contract Booking {
         _refundAmount = _totalPrice / 2;
       } else if ( cancelOption == 3 ){
         //90% as refund Amount
-        _refundAmount = _totalPrice - _totalPrice / 10
+        _refundAmount = _totalPrice - _totalPrice / 10;
       }
       _bookingStatus=BookingStatus.CancelRequest;
     }

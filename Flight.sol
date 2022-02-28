@@ -16,7 +16,7 @@ conract Flight {
   }
 
   uint8       _availableSeats;
-  FlightRecord _info
+  FlightRecord _info;
   uint8  _status;
 
   modifier isAirliner() {
@@ -44,7 +44,7 @@ conract Flight {
   }
 
   function block(unint numSeats) public {
-    require(_availableSeats >= numSeats, "Not Enough Seats Available")
+    require(_availableSeats >= numSeats, "Not Enough Seats Available");
     _availableSeats = _availableSeats - numSeats;
   }
 
