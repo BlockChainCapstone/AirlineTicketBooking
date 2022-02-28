@@ -18,16 +18,9 @@ contract AirlineTicketManagement {
   mapping (address => Booking[] ) dues;
 
 
-  function getFlightRecords(string memory flightId) public view returns(FlightRecord memory){
-    return flightRecords[flightId];
-  }
-
-  function getFlightStatus(string memory flightId, string memory startDate) public view returns(string memory){
-    return flights[flightId][startDate].getStatus();
-  }
 
   modifier isAirliner() {
-      require(airline1 == msg.sender || airline2 == msg.sender, "Only Aireliner is allowed to perform function");
+      require(airline1 == msg.sender || airline2 == msg.sender, "Only Airliner is allowed to perform function");
       _;
   }
 
@@ -57,19 +50,36 @@ contract AirlineTicketManagement {
   }
 
   constructor() {
-    flightRecords["A1-P001"] = FlightRecord("A1-P001",airline1,20,"Bengaluru","Pune",180,20);
-    flightRecords["A1-P002"] = FlightRecord("A1-P002",airline1,25,"Mumbai","Bengaluru",240,10);
-    flightRecords["A1-P003"] = FlightRecord("A1-P003",airline1,20,"Bengaluru","Bhopal",720,30);
-    flightRecords["A2-P001"] = FlightRecord("A2-P001",airline2,40,"Bengaluru","Pune",300,20);
-    flightRecords["A2-P002"] = FlightRecord("A2-P002",airline2,40,"Kolkatta","Jaipur",180,10);
+    flightRecords["A11"] = FlightRecord("A11",airline1,20,"Bengaluru","Pune",180,20);
+    flightRecords["A12"] = FlightRecord("A12",airline1,25,"Mumbai","Bengaluru",240,10);
+    flightRecords["A13"] = FlightRecord("A13",airline1,20,"Bengaluru","Bhopal",720,30);
+    flightRecords["A21"] = FlightRecord("A21",airline2,40,"Bengaluru","Pune",300,20);
+    flightRecords["A22"] = FlightRecord("A22",airline2,40,"Kolkatta","Jaipur",180,10);
   }
 
-  function updateFlightStatus(string memory flightId, string memory startDate, uint8 status) public /*validFlight(flightId) isAirliner*/ {
-    if ( flights[flightId] == 0 || !flights[flightId][startDate].isValid() ){ //27 ,28
+  function updateFlightStatus(string memory flightId, string memory startDate, uint8 status) public validFlight(flightId) isAirliner {
+    if ( status == 0 ){
+        require(msg.sender == flightRecords[flightId].airlineAddress, "Not an airline address");
         flights[flightId][startDate] = new Flight(flightRecords[flightId]);
+    }else{
+        require(flights[flightId][startDate].isValid(),"Flight should be in valid state");
+        Flight flight = flights[flightId][startDate];
+        flight.setStatus(msg.sender, status);
     }
-    flights[flightId][startDate].setStatus(status);
   }
+
+  function getFlightRecords(string memory flightId) public view returns(FlightRecord memory){
+    return flightRecords[flightId];
+  }
+
+  function getFlightStatus(string memory flightId, string memory startDate) public view returns(string memory){
+    return flights[flightId][startDate].getStatus();
+  }
+
+  function getFlightAirline(string memory flightId, string memory startDate) public view returns(address[2] memory){
+    return flights[flightId][startDate].getAirlineAddress();
+  }
+
 
   function clearDues() public isAirliner {
     Booking [] storage dueBookings = dues[msg.sender];

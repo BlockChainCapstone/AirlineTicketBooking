@@ -17,12 +17,12 @@ contract Flight {
   string[6] statusMap = ['BookingOpen', 'BookingClosed', 'Delayed', 'Departed','Landed','Cancelled'];
 
   uint8       _availableSeats;
-  FlightRecord _info;
+  FlightRecord   _info;
   uint8  _status;
   bool   _exists;
 
-  modifier isAirliner() {
-      require(_info.airlineAddress == msg.sender, "Only  Airline is allowed to mdify");
+  modifier isAirliner(address invokerAddress) {
+      require(_info.airlineAddress == invokerAddress, "Only  Airline is allowed to modify Status");
       _;
   }
   modifier validStatus(uint8 status) {
@@ -46,7 +46,14 @@ contract Flight {
     return _availableSeats;
   }
 
-  function setStatus(uint8 status) public payable isAirliner validStatus(status){
+  function getAirlineAddress() public view returns (address[2] memory) {
+    address[2] memory addresses;
+    addresses[0]=_info.airlineAddress;
+    addresses[1]=msg.sender;
+    return addresses;
+  }
+
+  function setStatus(address invokerAddress, uint8 status) public payable isAirliner(invokerAddress) validStatus(status){
     _status = status;
   }
 
