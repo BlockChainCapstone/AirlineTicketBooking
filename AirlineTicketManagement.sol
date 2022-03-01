@@ -9,8 +9,8 @@ import "./String.sol";
 contract AirlineTicketManagement {
 
 
-  address airline1 = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
-  address airline2 = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
+  address airline1 = 0xE918Ac848E60d16C1eAa84516A5ed0788b103216;
+  address airline2 = 0x312533c724b8614FFD6D83b910f82E952b073119;
 
   mapping (address => mapping(string => mapping(string => Booking))) bookings;
   mapping (string => mapping(string => Flight )) flights;
