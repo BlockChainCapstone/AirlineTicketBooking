@@ -9,8 +9,8 @@ import "./String.sol";
 contract AirlineTicketManagement {
 
 
-  address airline1 = 0xE918Ac848E60d16C1eAa84516A5ed0788b103216;
-  address airline2 = 0x312533c724b8614FFD6D83b910f82E952b073119;
+  address airline1 = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+  address airline2 = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
 
   mapping (address => mapping(string => mapping(string => Booking))) bookings;
   mapping (string => mapping(string => Flight )) flights;
@@ -54,6 +54,11 @@ contract AirlineTicketManagement {
     require(String.compare(flights[flightId][startDate].getStatus(), "Cancelled") || String.compare(flights[flightId][startDate].getStatus(), "Delayed"), "Flight is not in Cancelled or Delayed State");
     _;
   }
+
+  /*modifier isDues(){
+    require(isAirliner[msg.sender] == address(0), "Airline has dues so can't take money from wallet");
+    _;
+  }*/
 
 
   constructor() {
@@ -104,12 +109,13 @@ contract AirlineTicketManagement {
         Booking booking = dueBookings[i];
         wallet[booking._userAddress()] += booking._refundAmount();
         wallet[msg.sender] -= booking._refundAmount();
-        booking.refund();
+        booking.refund(msg.sender);
         flights[booking.getFlightId()][booking.getStartDate()].releaseSeats(booking.getTicketCount());
     }
+    delete dues[msg.sender];
   }
 
-  function checkAvailability(string memory flightId, string memory startDate) public view validFlight(flightId) isBookingOpen(flightId,startDate) returns (uint)  {
+  function checkAvailability(string memory flightId, string memory startDate) public view validFlight(flightId) isBookingOpen(flightId,startDate) returns (uint256)  {
     return flights[flightId][startDate].getAvailableSeats();
   }
 
@@ -117,13 +123,13 @@ contract AirlineTicketManagement {
     bookings[msg.sender][flightId][startDate].getBookingStatus();
   }
 
-  function claimRefund(string memory flightId, string memory startDate) public isTraveller hasBookings(flightId, startDate) refundable(flightId, startDate){
-    bookings[msg.sender][flightId][startDate].requestRefund(flights[flightId][startDate].getStatus());
+  function claimRefundForFlightCancellation(string memory flightId, string memory startDate) public isTraveller hasBookings(flightId, startDate) refundable(flightId, startDate){
+    bookings[msg.sender][flightId][startDate].requestRefund(flights[flightId][startDate].getStatus(), msg.sender);
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 
   function cancel(string memory flightId, string memory startDate, uint8 cancelOption) public isTraveller validFlight(flightId)  hasBookings(flightId, startDate){
-    bookings[msg.sender][flightId][startDate].requestCancel(cancelOption);
+    bookings[msg.sender][flightId][startDate].requestCancel(cancelOption, msg.sender);
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 

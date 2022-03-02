@@ -20,8 +20,8 @@ contract Booking {
     BookingStatus public  _bookingStatus;
 
 
-    modifier isAirliner() {
-        require(_airlineAddress == msg.sender, "Only Airline is allowed to refund");
+    modifier isAirliner(address invoker) {
+        require(_airlineAddress == invoker, "Airline - Only Airline is allowed to refund");
         _;
     }
 
@@ -35,8 +35,8 @@ contract Booking {
         _;
     }
 
-    modifier isTraveller() {
-        require(_userAddress == msg.sender, "Only Airline is allowed to refund");
+    modifier isTraveller(address invoker) {
+        require(_userAddress == invoker, "Only Airline is allowed to refund");
         _;
     }
 
@@ -78,7 +78,7 @@ contract Booking {
         return _bookingStatus;
     }
 
-    function requestRefund(string memory flightState) public isTraveller {
+    function requestRefund(string memory flightState, address invoker) public isTraveller(invoker) {
       // 50% as refund amount
       if (String.compare(flightState, "Delayed")){
         _refundAmount = _totalPrice / 2;
@@ -88,7 +88,7 @@ contract Booking {
       _bookingStatus=BookingStatus.RefundRequest;
     }
 
-    function requestCancel(uint8 cancelOption) public isTraveller validCancelOption(cancelOption){
+    function requestCancel(uint8 cancelOption, address invoker) public isTraveller(invoker) validCancelOption(cancelOption){
       if ( cancelOption == 1 ){
         //20% as refund Amount
         _refundAmount = _totalPrice / 5;
@@ -102,7 +102,7 @@ contract Booking {
       _bookingStatus=BookingStatus.CancelRequest;
     }
 
-    function refund() payable public isAirliner isRefundable {
+    function refund(address invoker) payable public isAirliner(invoker) isRefundable {
     //  _userAddress.transfer(_refundAmount);
       if (_bookingStatus == BookingStatus.RefundRequest ){
         _bookingStatus=BookingStatus.Refunded;
