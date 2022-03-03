@@ -45,6 +45,11 @@ contract AirlineTicketManagement {
     _;
   }
 
+  modifier isLanded(string memory flightId,string memory startDate){
+    require(!String.compare(flights[flightId][startDate].getStatus(), "Landed"), "Flighthas already landed and not eligible for cencel now");
+    _;
+  }
+
   modifier checkBalance(uint8 numberOfTickets, string memory flightId){
     require(wallet[msg.sender] > numberOfTickets * flightRecords[flightId].ticketPrice, "Traveller is not having enough balance");
     _;
@@ -54,11 +59,6 @@ contract AirlineTicketManagement {
     require(String.compare(flights[flightId][startDate].getStatus(), "Cancelled") || String.compare(flights[flightId][startDate].getStatus(), "Delayed"), "Flight is not in Cancelled or Delayed State");
     _;
   }
-
-  /*modifier isDues(){
-    require(isAirliner[msg.sender] == address(0), "Airline has dues so can't take money from wallet");
-    _;
-  }*/
 
 
   constructor() {
@@ -123,12 +123,12 @@ contract AirlineTicketManagement {
     bookings[msg.sender][flightId][startDate].getBookingStatus();
   }
 
-  function claimRefundForFlightCancellation(string memory flightId, string memory startDate) public isTraveller hasBookings(flightId, startDate) refundable(flightId, startDate){
+  function claimRefund(string memory flightId, string memory startDate) public isTraveller hasBookings(flightId, startDate) refundable(flightId, startDate){
     bookings[msg.sender][flightId][startDate].requestRefund(flights[flightId][startDate].getStatus(), msg.sender);
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
 
-  function cancel(string memory flightId, string memory startDate, uint8 cancelOption) public isTraveller validFlight(flightId)  hasBookings(flightId, startDate){
+  function cancel(string memory flightId, string memory startDate, uint8 cancelOption) public isTraveller validFlight(flightId)  hasBookings(flightId, startDate) isLanded (flightId, startDate){
     bookings[msg.sender][flightId][startDate].requestCancel(cancelOption, msg.sender);
     dues[flightRecords[flightId].airlineAddress].push(bookings[msg.sender][flightId][startDate]);
   }
