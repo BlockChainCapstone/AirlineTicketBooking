@@ -9,8 +9,8 @@ import "./String.sol";
 contract AirlineTicketManagement {
 
 
-  address airline1 = 0x632979db26CF7A2D2525c3BB0702051d5390B30b;
-  address airline2 = 0x48875dB892314B16da477C328e49E6152B4822Ec;
+  address airline1 = 0xf4E8b86db8fa52f6323C7fAa6F94d89900142948;
+  address airline2 = 0x8f032B7C2997CB6AfFFe2578314bB4852AC5e462;
 
   mapping (address => mapping(string => mapping(string => Booking))) bookings;
   mapping (string => mapping(string => Flight )) flights;
@@ -41,6 +41,7 @@ contract AirlineTicketManagement {
   }
 
   modifier isBookingOpen(string memory flightId,string memory startDate){
+    require(flights[flightId][startDate].isValid(),"Flight should be in valid state");
     require(String.compare(flights[flightId][startDate].getStatus(), "BookingOpen"), "Flight is not in BookingOpen State");
     _;
   }
@@ -51,7 +52,7 @@ contract AirlineTicketManagement {
   }
 
   modifier checkBalance(uint8 numberOfTickets, string memory flightId){
-    require(wallet[msg.sender] > numberOfTickets * flightRecords[flightId].ticketPrice, "Traveller is not having enough balance");
+    require(wallet[msg.sender] >= numberOfTickets * flightRecords[flightId].ticketPrice, "Traveller is not having enough balance");
     _;
   }
 
@@ -119,7 +120,7 @@ contract AirlineTicketManagement {
     return flights[flightId][startDate].getAvailableSeats();
   }
 
-  function checkBookingStatus(string memory flightId, string memory startDate) public view isTraveller hasBookings(flightId, startDate){
+  function checkBookingStatus(string memory flightId, string memory startDate) public view isTraveller  validFlight(flightId) hasBookings(flightId, startDate){
     bookings[msg.sender][flightId][startDate].getBookingStatus();
   }
 
